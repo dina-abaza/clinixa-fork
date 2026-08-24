@@ -1,16 +1,17 @@
 {
-  "name": "shared",
+  "name": "@clinixa/shared",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "الحزمة المشتركة بين server و client — الصلاحيات، الثوابت، والأنواع",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "build:watch": "tsc --watch"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
   "devDependencies": {
-    "typescript": "^7.0.2"
+    "typescript": "^5.6.3"
   }
 }
