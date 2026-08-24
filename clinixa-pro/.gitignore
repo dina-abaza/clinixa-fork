@@ -1,0 +1,79 @@
+# ==============================
+# Clinixa — .gitignore (جذر الـ Monorepo)
+# ==============================
+
+# ---- Dependencies ----
+node_modules/
+**/node_modules/
+.pnp
+.pnp.js
+
+# ---- Environment files (أسرار — ماتترفعش أبدًا) ----
+.env
+.env.local
+.env.*.local
+**/.env
+!**/.env.example
+
+# ---- بيانات محلية (قاعدة البيانات + المرفقات + النسخ الاحتياطي) ----
+# دي بيانات مرضى حقيقية — مينفعش تتحط على Git إطلاقًا
+**/data/
+**/*.db
+**/*.sqlite
+**/*.sqlite3
+**/attachments/
+**/backups/
+
+# ---- Build outputs ----
+dist/
+build/
+out/
+**/dist/
+**/build/
+
+# Electron packaging output
+packages/electron/release/
+packages/electron/out/
+*.exe
+*.dmg
+*.AppImage
+*.deb
+
+# ---- TypeScript ----
+*.tsbuildinfo
+**/*.tsbuildinfo
+
+# ---- Logs ----
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+logs/
+
+# ---- Testing / Coverage ----
+coverage/
+**/coverage/
+
+# ---- Cache ----
+.npm/
+.eslintcache
+.cache/
+**/.vite/
+
+# ---- IDE / Editor ----
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# ---- OS files ----
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- Misc ----
+*.local
+.turbo/
