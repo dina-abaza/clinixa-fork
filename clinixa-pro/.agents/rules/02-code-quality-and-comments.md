@@ -37,3 +37,6 @@ export async function calculatePatientDue(patientId: string): Promise<number> {
 - **ممنوع استخدام `any`:** يجب تعريف الأنواع بوضوح في `@clinixa/shared` أو الاستفادة من التوليد الآلي لـ Zod (`z.infer<typeof schema>`).
 - **تطبيق Zod Validation:** جميع المدخلات الآتية من `req.body` أو `req.query` أو `req.params` تجتاز التحقق بواسطة Zod Schemas عبر `validate.middleware.ts`.
 - **التعامل الأنيق مع الأخطاء (Error Handling):** استخدام فئات الأخطاء المخصصة (`AppError`, `ValidationError`, `UnauthorizedError`, `ForbiddenError`, `NotFoundError`, `ConflictError`, `LockedError`).
+
+## 4. Strict Type Schema Verification (المطابقة الحرفية للسكيمة الموثقة)
+- **المطابقة التامة لأعمدة الجداول والـ API:** أي `interface` يُكتب في `@clinixa/shared/types.ts` يجب أن يُراجع حرفياً عموداً بعمود وحقلاً بحقل مع تعريف الجدول في `clinixa-backend-architecture.md` وأمثلة الـ Response في `clinixa-api-reference.md` قبل اعتماده، يمنع منعاً باتاً تغيير أسماء الحقول أو أنواعها أو اختراع هياكل غير موثقة.

@@ -14,10 +14,21 @@ if (process.env.NODE_ENV === 'production' && !process.env.SQLITE_DB_PATH) {
 
 /**
  * @description الإعدادات المشتركة لجميع بيئات التشغيل (DRY)
+ * ⭐ يُفعِّل PRAGMA foreign_keys = ON في كل الاتصالات المنشأة بواسطة Knex (Migrations & Seeds)
  */
 const baseConfig: Partial<Knex.Config> = {
   client: 'better-sqlite3',
   useNullAsDefault: true,
+  pool: {
+    afterCreate: (conn: any, done: (err: Error | null, connection: any) => void) => {
+      try {
+        conn.pragma('foreign_keys = ON');
+        done(null, conn);
+      } catch (err) {
+        done(err as Error, conn);
+      }
+    },
+  },
 };
 
 /**

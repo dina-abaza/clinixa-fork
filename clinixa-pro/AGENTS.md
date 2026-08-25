@@ -138,3 +138,4 @@ export async function calculatePatientDue(patientId: string): Promise<number> {
 1. **فحص الأنواع (TypeScript Verification):** تشغيل `npx tsc --noEmit` للتأكد من عدم وجود أخطاء أنواع.
 2. **فحص البناء والصياغة:** التأكد من عدم وجود أخطاء في الـ imports أو متغيرات غير مستخدمة.
 3. **التأكد من وجود التعليقات العربية:** التأكد من أن جميع الدوال الجديدة أو المعدلة تحتوي على JSDoc باللغة العربية.
+4. **مطابقة الـ Types للسكيمة الموثقة:** التردد والمراجعة الحرفية عموداً بعمود وحقلاً بحقل لكل `interface` في `@clinixa/shared/types.ts` مع جداول `clinixa-backend-architecture.md` وأمثلة `clinixa-api-reference.md`.
