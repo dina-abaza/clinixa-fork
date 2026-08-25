@@ -36,7 +36,7 @@ const envSchema = z.object({
 
   // ── المزامنة ───────────────────────────────────
   MONGODB_URI: z.string().default(''),
-  SYNC_ENABLED: z.coerce.boolean().default(false),
+  SYNC_ENABLED: z.enum(['true', 'false']).default('false').transform((v) => v === 'true'),
   SYNC_POLL_INTERVAL_MS: z.coerce.number().default(30000),
   SYNC_MAX_ATTEMPTS: z.coerce.number().default(5),
 
