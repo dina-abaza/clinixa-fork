@@ -24,7 +24,7 @@ export async function up(knex: Knex): Promise<void> {
     table.text('patient_id').notNullable()
       .references('id').inTable('patients').onDelete('CASCADE');
     table.text('branch_id').notNullable()
-      .references('id').inTable('branches').onDelete('CASCADE');
+      .references('id').inTable('branches').onDelete('RESTRICT');
     table.text('due_date').notNullable();            // YYYY-MM-DD
     table.text('reason').nullable();
     table.decimal('fee').nullable();                  // رسوم الموعد — قرار ١٨٧

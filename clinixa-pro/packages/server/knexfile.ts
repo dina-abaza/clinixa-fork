@@ -1,5 +1,6 @@
 import type { Knex } from 'knex';
 import * as path from 'path';
+import * as fs from 'fs';
 import * as dotenv from 'dotenv';
 
 dotenv.config();
@@ -10,6 +11,17 @@ dotenv.config();
  */
 if (process.env.NODE_ENV === 'production' && !process.env.SQLITE_DB_PATH) {
   throw new Error('SQLITE_DB_PATH is required in production environment');
+}
+
+/**
+ * @description ينشئ مجلد قاعدة البيانات إذا لم يكن موجوداً
+ */
+function ensureDirectory(filePath: string): void {
+  if (filePath === ':memory:' || !filePath) return;
+  const dir = path.dirname(filePath);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
 }
 
 /**
@@ -30,6 +42,9 @@ const baseConfig: Partial<Knex.Config> = {
     },
   },
 };
+
+const devDbPath = process.env.SQLITE_DB_PATH ?? path.join(__dirname, '../../data/clinixa.db');
+ensureDirectory(devDbPath);
 
 /**
  * @description إعداد Knex لقاعدة البيانات SQLite
