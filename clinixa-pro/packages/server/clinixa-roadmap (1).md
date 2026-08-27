@@ -71,16 +71,16 @@
 ### المرحلة ٢ — Auth & Setup (يومين)
 
 **اليوم ٥: Setup Module**
-- [ ] `modules/setup/setup.validation.ts` (Zod schema لـ first-run طبقًا لـ `clinixa-api-reference.md` قسم ١)
-- [ ] `modules/setup/setup.service.ts` — إنشاء clinic_settings + الفرع الرئيسي + حساب الطبيب في transaction واحدة
-- [ ] `modules/setup/setup.controller.ts` + `setup.routes.ts`
-- [ ] اختبار فعلي: `POST /api/setup/first-run` بـ Postman/Thunder Client، والتأكد إن الرد مطابق تمامًا للمثال الموثّق
+- [x] `modules/setup/setup.validation.ts` (Zod schema لـ first-run طبقًا لـ `clinixa-api-reference.md` قسم ١)
+- [x] `modules/setup/setup.service.ts` — إنشاء clinic_settings + الفرع الرئيسي + حساب الطبيب في transaction واحدة
+- [x] `modules/setup/setup.controller.ts` + `setup.routes.ts`
+- [x] اختبار فعلي: `POST /api/setup/first-run` بـ Postman/Thunder Client، والتأكد إن الرد مطابق تمامًا للمثال الموثّق
 
 **اليوم ٦: Auth Module**
-- [ ] `middlewares/auth.middleware.ts` — فك تشفير JWT، حقن `employee_id`+`branch_id` في `req`
-- [ ] `middlewares/permission.middleware.ts` — factory function بتاخد `Permission` وترفض لو مش موجودة
-- [ ] `modules/auth/*` — login, logout, session, forgot-password
-- [ ] اختبار: تسجيل دخول كامل، وتجربة endpoint محمي بدون token (لازم يرجع `401`)، وبصلاحية ناقصة (لازم يرجع `403`)
+- [x] `middlewares/auth.middleware.ts` — فك تشفير JWT، حقن `employee_id`+`branch_id` في `req`
+- [x] `middlewares/permission.middleware.ts` — factory function بتاخد `Permission` وترفض لو مش موجودة
+- [x] `modules/auth/*` — login, logout, session, forgot-password
+- [x] اختبار: تسجيل دخول كامل، وتجربة endpoint محمي بدون token (لازم يرجع `401`)، وبصلاحية ناقصة (لازم يرجع `403`)
 
 ---
 

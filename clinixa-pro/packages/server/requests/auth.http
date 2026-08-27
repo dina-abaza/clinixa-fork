@@ -1,0 +1,57 @@
+@baseUrl = http://localhost:4321
+
+### 1. تسجيل الدخول (Login)
+# @name login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "dr.ahmed",
+  "password": "password123"
+}
+
+### حظ التوكن الناتج من خطوة التسجيل في متغير
+@authToken = {{login.response.body.data.token}}
+
+###
+
+### 2. جلب تفاصيل الجلسة الحالية (Get Session)
+GET {{baseUrl}}/api/auth/session
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+###
+
+### 3. جلب سؤال الأمان للمستخدم (Get Security Question)
+GET {{baseUrl}}/api/auth/security-question?username=dr.ahmed
+Content-Type: application/json
+
+###
+
+### 4. نسيت كلمة السر وإعادة تعيينها (Forgot Password)
+POST {{baseUrl}}/api/auth/forgot-password
+Content-Type: application/json
+
+{
+  "username": "dr.ahmed",
+  "security_answer": "الأندلس",
+  "new_password": "newpassword123"
+}
+
+###
+
+### 5. تسجيل الدخول بكلمة السر الجديدة (Login with new password)
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "dr.ahmed",
+  "password": "newpassword123"
+}
+
+###
+
+### 6. تسجيل الخروج (Logout)
+POST {{baseUrl}}/api/auth/logout
+Authorization: Bearer {{authToken}}
+Content-Type: application/json

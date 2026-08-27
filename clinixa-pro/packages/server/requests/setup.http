@@ -1,0 +1,29 @@
+### 1. فحص حالة السيرفر (Health Check)
+GET http://localhost:4321/health
+Content-Type: application/json
+
+###
+
+### 2. إعداد النظام لأول مرة (First Run Setup)
+# @name firstRun
+POST http://localhost:4321/api/setup/first-run
+Content-Type: application/json
+
+{
+  "license_key": "CLX-9F2K-7Q1M-4TZX",
+  "clinic": {
+    "name_ar": "عيادة دكتور أحمد للقلب",
+    "phone": "01012345678",
+    "address": "المعادي، القاهرة",
+    "specialty": "cardio"
+  },
+  "doctor_account": {
+    "name_ar": "د. أحمد محمود",
+    "username": "dr.ahmed",
+    "password": "password123"
+  },
+  "security": {
+    "question": "اسم أول مدرسة التحقت بيها؟",
+    "answer": "الأندلس"
+  }
+}

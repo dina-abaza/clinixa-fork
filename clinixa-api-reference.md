@@ -115,8 +115,12 @@ Content-Type: application/json
   "data": {
     "token": "eyJhbGciOi...",
     "employee": {
-      "id": "emp_01HZ...", "name_ar": "د. أحمد محمود", "role": "doctor",
-      "is_owner": true, "branch_id": null,
+      "id": "emp_01HZ...",
+      "name_ar": "د. أحمد محمود",
+      "username": "dr.ahmed",
+      "role": "doctor",
+      "is_owner": true,
+      "branch_id": null,
       "permissions": ["pat.view","pat.add","pat.edit","pat.off","att.view","att.add","att.edit","att.done","pay.view","pay.add","pay.edit","inv.view","inv.add","inv.edit","admin.view","admin.edit"]
     },
     "active_branch": { "id": "br_01HZ...", "name_ar": "الفرع الرئيسي" }
@@ -130,12 +134,50 @@ Content-Type: application/json
 ```
 
 ### `GET /api/auth/session`
-**Response 200:** نفس شكل `data` بتاع الـ login بالظبط (من غير `token`).
+**Response 200:**
+```json
+{
+  "ok": true,
+  "data": {
+    "employee": {
+      "id": "emp_01HZ...",
+      "name_ar": "د. أحمد محمود",
+      "username": "dr.ahmed",
+      "role": "doctor",
+      "is_owner": true,
+      "branch_id": null,
+      "permissions": ["pat.view","pat.add","pat.edit","pat.off","att.view","att.add","att.edit","att.done","pay.view","pay.add","pay.edit","inv.view","inv.add","inv.edit","admin.view","admin.edit"]
+    },
+    "active_branch": { "id": "br_01HZ...", "name_ar": "الفرع الرئيسي" }
+  },
+  "warning": null
+}
+```
+
+### `GET /api/auth/security-question?username=dr.ahmed`
+**Response 200:**
+```json
+{
+  "ok": true,
+  "data": { "question": "اسم أول مدرسة التحقت بيها؟" },
+  "warning": null
+}
+```
+**Error 404:**
+```json
+{ "ok": false, "error": { "code": "NOT_FOUND", "message": "المستخدم غير موجود" } }
+```
 
 ### `POST /api/auth/forgot-password`
 **Request:** `{ "username": "dr.ahmed", "security_answer": "الأندلس", "new_password": "********" }`
-**Response 200:** `{ "ok": true, "data": { "message": "تم تغيير كلمة السر" }, "warning": null }`
-**Error 400:** `{ "ok": false, "error": { "code": "VALIDATION_ERROR", "message": "إجابة سؤال الأمان غلط" } }`
+**Response 200:** `{ "ok": true, "data": { "message": "تم تغيير كلمة السر بنجاح" }, "warning": null }`
+**Error 400:** `{ "ok": false, "error": { "code": "VALIDATION_ERROR", "message": "إجابة سؤال الأمان غلط", "field": "security_answer" } }`
+
+### `POST /api/auth/logout`
+**Response 200:**
+```json
+{ "ok": true, "data": { "message": "تم تسجيل الخروج بنجاح" }, "warning": null }
+```
 
 ---
 
@@ -478,6 +520,29 @@ Content-Type: application/json
 
 ## ٦. الموظفون والصلاحيات
 
+### `GET /api/employees?branch_id=br_01HZ`
+**Response 200:**
+```json
+{
+  "ok": true,
+  "data": {
+    "items": [
+      {
+        "id": "emp_01HZ", "name_ar": "د. أحمد محمود", "username": "dr.ahmed", "role": "doctor",
+        "branch_id": null, "is_owner": true, "is_active": true,
+        "permissions": ["pat.view","pat.add","pat.edit","pat.off","att.view","att.add","att.edit","att.done","pay.view","pay.add","pay.edit","inv.view","inv.add","inv.edit","admin.view","admin.edit"]
+      },
+      {
+        "id": "emp_01HNEW", "name_ar": "منى السكرتيرة", "username": "mona.sec", "role": "secretary",
+        "branch_id": "br_01HZ", "is_owner": false, "is_active": true,
+        "permissions": ["pat.view","pat.add","pat.edit","att.view","att.add","att.edit","att.done","pay.view","pay.add"]
+      }
+    ]
+  },
+  "warning": null
+}
+```
+
 ### `POST /api/employees`
 **Request:**
 ```json
@@ -500,9 +565,105 @@ Content-Type: application/json
 > ⚠️ `temporary_password` بيترجع **مرة واحدة بس** في استجابة الإنشاء — مش مخزّن نص عادي، ومش بيترجع تاني في أي `GET` بعد كده.
 
 ### `PUT /api/employees/:id/permissions`
+**Request:**
+```json
+{
+  "permissions": ["pat.view", "pat.add", "att.view", "att.add"]
+}
+```
+**Response 200:**
+```json
+{
+  "ok": true,
+  "data": { "id": "emp_01HNEW", "permissions": ["pat.view", "pat.add", "att.view", "att.add"] },
+  "warning": null
+}
+```
 **Error (محاولة على حساب المالك) 403:**
 ```json
 { "ok": false, "error": { "code": "FORBIDDEN", "message": "مينفعش تعدّل صلاحيات حساب المالك" } }
+```
+
+### `PATCH /api/employees/:id/toggle-active`
+**Request:** `{ "is_active": false }`
+**Response 200:**
+```json
+{ "ok": true, "data": { "id": "emp_01HNEW", "is_active": false }, "warning": null }
+```
+**Error (محاولة تعطيل حساب المالك) 403:**
+```json
+{ "ok": false, "error": { "code": "FORBIDDEN", "message": "مينفعش تعطّل حساب المالك" } }
+```
+
+---
+
+## ٦.٥ الفروع والإعدادات (Branches & Settings)
+
+### `GET /api/branches`
+**Response 200:**
+```json
+{
+  "ok": true,
+  "data": {
+    "items": [
+      { "id": "br_01HZ", "name_ar": "الفرع الرئيسي", "address_ar": "المعادي، القاهرة", "phone": "0223456789", "opens_at": "09:00", "closes_at": "21:00", "is_host": true, "is_active": true },
+      { "id": "br_02HB", "name_ar": "فرع مدينة نصر", "address_ar": "مدينة نصر، القاهرة", "phone": "0229876543", "opens_at": "10:00", "closes_at": "22:00", "is_host": false, "is_active": true }
+    ]
+  },
+  "warning": null
+}
+```
+
+### `POST /api/branches`
+**Request:**
+```json
+{
+  "name_ar": "فرع المهندسين",
+  "address_ar": "شارع جامعة الدول، الجيزة",
+  "phone": "0233445566",
+  "opens_at": "10:00",
+  "closes_at": "20:00"
+}
+```
+**Response 201:**
+```json
+{
+  "ok": true,
+  "data": { "id": "br_03HM", "name_ar": "فرع المهندسين", "is_host": false, "is_active": true },
+  "warning": null
+}
+```
+
+### `GET /api/settings`
+**Response 200:**
+```json
+{
+  "ok": true,
+  "data": {
+    "clinic": { "name_ar": "عيادة دكتور أحمد للقلب", "specialty": "cardio", "phone": "0223456789", "address": "المعادي، القاهرة", "sync_mode": "none" },
+    "prices": [
+      { "id": "prc_1", "charge_type": "consultation", "default_amount": 300 },
+      { "id": "prc_2", "charge_type": "follow_up_visit", "default_amount": 150 }
+    ]
+  },
+  "warning": null
+}
+```
+
+### `PUT /api/settings`
+**Request:**
+```json
+{
+  "clinic": { "name_ar": "عيادة دكتور أحمد التخصصية للقلب", "phone": "0223456789", "address": "المعادي الجديدة، القاهرة" },
+  "prices": [
+    { "charge_type": "consultation", "default_amount": 350 },
+    { "charge_type": "follow_up_visit", "default_amount": 150 }
+  ]
+}
+```
+**Response 200:**
+```json
+{ "ok": true, "data": { "message": "تم تحديث الإعدادات والأسعار بنجاح" }, "warning": null }
 ```
 
 ---

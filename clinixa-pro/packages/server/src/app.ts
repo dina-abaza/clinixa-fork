@@ -3,6 +3,9 @@ import cors from 'cors';
 import { env } from './config/env';
 import { errorHandler } from './middlewares/error-handler.middleware';
 import { arabicNormalizeMiddleware } from './middlewares/arabic-normalize.middleware';
+import setupRoutes from './modules/setup/setup.routes';
+import authRoutes from './modules/auth/auth.routes';
+
 
 const app = express();
 
@@ -24,6 +27,10 @@ app.get('/health', (_req, res) => {
     warning: null,
   });
 });
+
+//  Routes الأساسية
+app.use('/api/setup', setupRoutes);
+app.use('/api/auth', authRoutes);
 
 // Middleware الأخطاء في النهاية
 app.use(errorHandler);
