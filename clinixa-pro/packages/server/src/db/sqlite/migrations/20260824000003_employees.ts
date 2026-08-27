@@ -14,8 +14,8 @@ export async function up(knex: Knex): Promise<void> {
     table.text('username').notNullable().unique();
     table.text('password_hash').notNullable();
     table.text('role').notNullable();                            // doctor | nurse | secretary
-    table.text('branch_id').nullable()
-      .references('id').inTable('branches').onDelete('SET NULL'); // null = المالك (متاح لكل الفروع)
+   table.text('branch_id').nullable()
+  .references('id').inTable('branches').onDelete('RESTRICT'); // null = المالك (متاح لكل الفروع)
     table.integer('is_owner').notNullable().defaultTo(0);       // boolean — حماية خاصة
     table.integer('is_active').notNullable().defaultTo(1);      // boolean
     table.text('security_question').nullable();                  // للمالك فقط
