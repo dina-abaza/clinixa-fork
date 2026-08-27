@@ -294,6 +294,134 @@ Content-Type: application/json
 }
 ```
 
+### `POST /api/patients/:id/medical-alerts`
+**Request:**
+```json
+{
+  "type": "allergy",
+  "text_ar": "حساسية من البنسلين",
+  "text_en": "Penicillin allergy"
+}
+```
+**Response 201:**
+```json
+{
+  "ok": true,
+  "data": { "id": "ma_01H1", "type": "allergy", "text_ar": "حساسية من البنسلين" },
+  "warning": null
+}
+```
+
+### `POST /api/patients/:id/medical-history`
+**Request:**
+```json
+{
+  "category": "chronic",
+  "text_ar": "ضغط دم مرتفع منذ 2018",
+  "text_en": "Hypertension since 2018"
+}
+```
+**Response 201:**
+```json
+{
+  "ok": true,
+  "data": { "id": "mh_01H1", "category": "chronic", "text_ar": "ضغط دم مرتفع منذ 2018" },
+  "warning": null
+}
+```
+
+### `POST /api/patients/:id/diagnoses`
+**Request:**
+```json
+{
+  "text_ar": "قصور بسيط بالصمام التاجي",
+  "text_en": "Mild mitral valve regurgitation"
+}
+```
+**Response 201:**
+```json
+{
+  "ok": true,
+  "data": { "id": "dx_01H1", "date": "2026-08-27", "text_ar": "قصور بسيط بالصمام التاجي" },
+  "warning": null
+}
+```
+
+### `POST /api/patients/:id/medications`
+**Request:**
+```json
+{
+  "name": "Concor 5mg",
+  "dose": "5mg",
+  "frequency": "مرة يوميًا",
+  "status": "active"
+}
+```
+**Response 201:**
+```json
+{
+  "ok": true,
+  "data": { "id": "med_01H1", "name": "Concor 5mg", "status": "active" },
+  "warning": null
+}
+```
+
+### `PATCH /api/medications/:id/stop`
+**Response 200:**
+```json
+{
+  "ok": true,
+  "data": { "id": "med_01H1", "status": "completed" },
+  "warning": null
+}
+```
+
+### `PATCH /api/medications/:id/refill`
+**Response 200:**
+```json
+{
+  "ok": true,
+  "data": { "id": "med_01H1", "status": "active" },
+  "warning": null
+}
+```
+
+### `POST /api/patients/:id/labs`
+**Request:**
+```json
+{
+  "name": "تحليل دهون شامل",
+  "date": "2026-08-27",
+  "status": "pending"
+}
+```
+**Response 201:**
+```json
+{
+  "ok": true,
+  "data": { "id": "lab_01H1", "name": "تحليل دهون شامل", "status": "pending" },
+  "warning": null
+}
+```
+
+### `POST /api/patients/:id/radiology`
+**Request:**
+```json
+{
+  "type": "أشعة إيكو على القلب",
+  "date": "2026-08-27",
+  "report": "سليمة"
+}
+```
+**Response 201:**
+```json
+{
+  "ok": true,
+  "data": { "id": "rad_01H1", "type": "أشعة إيكو على القلب", "date": "2026-08-27" },
+  "warning": null
+}
+```
+
 ### `POST /api/patients/:id/prescriptions`
 **Request:**
 ```json
@@ -308,7 +436,20 @@ Content-Type: application/json
 {
   "ok": true,
   "data": {
-    "prescription": { "id": "rx_01H...", "date": "2026-08-24", "doctor_id": "emp_01HZ", "items": [ "..." ] },
+    "prescription": {
+      "id": "rx_01H...",
+      "date": "2026-08-24",
+      "doctor_id": "emp_01HZ",
+      "items": [
+        {
+          "drug": "Concor 5mg",
+          "dose": "1 قرص",
+          "frequency": "مرة يومياً",
+          "duration": "شهر",
+          "instructions": "صباحاً قبل الأكل"
+        }
+      ]
+    },
     "medical_alerts": [
       { "type": "allergy", "text_ar": "حساسية من البنسلين" }
     ]

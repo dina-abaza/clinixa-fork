@@ -81,3 +81,6 @@ export function generateEnglishName(nameAr: string): string {
 
   return translatedWords.join(' ');
 }
+
+export const mapArabicNameToEnglish = generateEnglishName;
+

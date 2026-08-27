@@ -1,0 +1,244 @@
+@baseUrl = http://localhost:4321
+
+# =====================================================
+# PHASE 3 — REST CLIENT TEST SUITE
+# المسار الحرج اليومي — تغطية كاملة لجميع الـ endpoints
+# =====================================================
+# ⚠️ شغّل الـ requests بالترتيب (1 → 24) عشان الـ inline references تشتغل صح
+# =====================================================
+
+### 1. تسجيل الدخول
+# @name login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "dr.ahmed",
+  "password": "newpassword123"
+}
+
+# ===================
+# 👤 PATIENTS MODULE
+# ===================
+
+### 2. إضافة مريض جديد
+# @name createPatient
+POST {{baseUrl}}/api/patients
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: application/json
+
+{
+  "name_ar": "مصطفى إبراهيم علي",
+  "phone": "01099887755",
+  "age": 35,
+  "gender": "male",
+  "address": "مدينة نصر، القاهرة",
+  "emergency_contact": {
+    "name": "أمل إبراهيم",
+    "relation": "spouse",
+    "phone": "01011223344"
+  }
+}
+
+### 3. إضافة نفس رقم الهاتف → يجب أن يُرجع DUPLICATE_PHONE warning
+POST {{baseUrl}}/api/patients
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: application/json
+
+{
+  "name_ar": "سارة محمود حسن",
+  "phone": "01099887755",
+  "age": 28,
+  "gender": "female"
+}
+
+### 4. جلب قائمة المرضى مع بحث
+GET {{baseUrl}}/api/patients?search=مصطفى&page=1&page_size=10
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: application/json
+
+### 5. جلب مريض بالـ ID (Get Patient)
+GET {{baseUrl}}/api/patients/{{createPatient.response.body.data.id}}
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: application/json
+
+### 6. تعديل بيانات المريض (Update Patient)
+PUT {{baseUrl}}/api/patients/{{createPatient.response.body.data.id}}
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: application/json
+
+{
+  "notes": "مريض متابعة قلب — حساسية من البنسلين"
+}
+
+### 7. إضافة تنبيه طبي — حساسية (Medical Alert)
+# @name addAlert
+POST {{baseUrl}}/api/patients/{{createPatient.response.body.data.id}}/medical-alerts
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: application/json
+
+{
+  "type": "allergy",
+  "text_ar": "حساسية من البنسلين",
+  "text_en": "Penicillin allergy"
+}
+
+### 8. إضافة تاريخ مرضي (Medical History)
+POST {{baseUrl}}/api/patients/{{createPatient.response.body.data.id}}/medical-history
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: application/json
+
+{
+  "category": "chronic",
+  "text_ar": "ضغط دم مرتفع منذ 2020",
+  "text_en": "Hypertension since 2020"
+}
+
+### 9. إضافة تشخيص (Diagnosis)
+POST {{baseUrl}}/api/patients/{{createPatient.response.body.data.id}}/diagnoses
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: application/json
+
+{
+  "text_ar": "قصور بسيط بالصمام التاجي",
+  "text_en": "Mild mitral valve regurgitation"
+}
+
+### 10. إضافة دواء للمريض (Add Medication)
+# @name addMedication
+POST {{baseUrl}}/api/patients/{{createPatient.response.body.data.id}}/medications
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: application/json
+
+{
+  "name": "Concor 5mg",
+  "dose": "5mg",
+  "frequency": "مرة يومياً صباحاً",
+  "status": "active"
+}
+
+### 11. جلب السجل الطبي الكامل (Medical Record)
+GET {{baseUrl}}/api/patients/{{createPatient.response.body.data.id}}/medical-record
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: application/json
+
+# =======================
+# 🏥 ATTENDANCE MODULE
+# =======================
+
+### 12. جلب طابور اليوم
+GET {{baseUrl}}/api/attendance
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: application/json
+
+### 13. تسجيل دخول المريض (Check-in)
+# @name checkIn
+POST {{baseUrl}}/api/attendance/check-in
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: application/json
+
+{
+  "patient_id": "{{createPatient.response.body.data.id}}"
+}
+
+### 14. نداء المريض للكشف (Call)
+PATCH {{baseUrl}}/api/attendance/{{checkIn.response.body.data.id}}/call
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: application/json
+
+### 15. إضافة روشتة أثناء الكشف — يُرجع medical_alerts تلقائياً
+POST {{baseUrl}}/api/patients/{{createPatient.response.body.data.id}}/prescriptions
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: application/json
+
+{
+  "items": [
+    { "drug": "Concor 5mg", "dose": "1 قرص", "frequency": "مرة يومياً", "duration": "شهر", "instructions": "صباحاً قبل الأكل" }
+  ]
+}
+
+### 16. إنهاء الكشف — الفعل المركّب ⭐ (Finish Attendance)
+POST {{baseUrl}}/api/attendance/{{checkIn.response.body.data.id}}/finish
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: application/json
+
+{
+  "items": [
+    { "charge_type": "consultation", "amount": 300 },
+    { "charge_type": "procedure", "amount": 150 }
+  ],
+  "follow_up": {
+    "days": 14,
+    "fee": 100,
+    "reason": "متابعة نتائج التحاليل"
+  }
+}
+
+### 17. تسجيل مريض ثاني وتحويله لـ noshow (اختبار حالة noshow)
+# @name checkIn2
+POST {{baseUrl}}/api/attendance/check-in
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: application/json
+
+{
+  "patient_id": "{{createPatient.response.body.data.id}}"
+}
+
+### 18. تحويل الحالة لـ noshow
+PATCH {{baseUrl}}/api/attendance/{{checkIn2.response.body.data.id}}/status
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: application/json
+
+{
+  "status": "noshow"
+}
+
+### 19. استعلام جاهزي التحصيل (Ready for Checkout)
+GET {{baseUrl}}/api/attendance/ready-for-checkout
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: application/json
+
+# =======================
+# 💰 PAYMENTS MODULE
+# =======================
+
+### 20. إضافة رسم طبي مباشر (Add Charge)
+POST {{baseUrl}}/api/charges
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: application/json
+
+{
+  "patient_id": "{{createPatient.response.body.data.id}}",
+  "type": "labs",
+  "amount": 100
+}
+
+### 21. تحصيل دفعة سداد (Add Payment)
+POST {{baseUrl}}/api/payments
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: application/json
+
+{
+  "patient_id": "{{createPatient.response.body.data.id}}",
+  "amount": 550,
+  "method": "cash"
+}
+
+### 22. استعلام المديونيات (Outstanding)
+GET {{baseUrl}}/api/payments/outstanding
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: application/json
+
+### 23. ملخص اليوم المالي (Day Summary)
+GET {{baseUrl}}/api/day-summary
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: application/json
+
+### 24. إقفال اليوم المالي (Close Day)
+POST {{baseUrl}}/api/day-summary/close
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: application/json
+
+{}
+
+###

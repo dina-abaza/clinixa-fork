@@ -87,20 +87,20 @@
 ### المرحلة ٣ — المسار الحرج اليومي (٥-٦ أيام)
 
 **اليوم ٧-٨: Patients Module**
-- [ ] كل endpoints المرضى + السجل الطبي من `clinixa-api-reference.md` قسم ٢
-- [ ] تركيز خاص: `arabicNormalize` بيتطبق فعليًا وقت الحفظ والبحث، و`DUPLICATE_PHONE` warning شغال
+- [x] كل endpoints المرضى + السجل الطبي من `clinixa-api-reference.md` قسم ٢
+- [x] تركيز خاص: `arabicNormalize` بيتطبق فعليًا وقت الحفظ والبحث، و`DUPLICATE_PHONE` warning شغال
 
 **اليوم ٩: Attendance Module**
-- [ ] كل endpoints الحضور — تركيز خاص على `attendance.repository.ts` **من غير** دالة `update`/`delete` عامة (قاعدة معمارية صارمة)
-- [ ] `POST /attendance/:id/finish` — الفعل المركّب، أهم endpoint في النظام كله
+- [x] كل endpoints الحضور — تركيز خاص على `attendance.repository.ts` **من غير** دالة `update`/`delete` عامة (قاعدة معمارية صارمة)
+- [x] `POST /attendance/:id/finish` — الفعل المركّب، أهم endpoint في النظام كله
 
 **اليوم ١٠: Payments Module**
-- [ ] charges, payments, outstanding, day-summary close/reopen
-- [ ] تأكيد: `due` بيتحسب لحظيًا في كل مكان، مفيش أي تخزين له
+- [x] charges, payments, outstanding, day-summary close/reopen
+- [x] تأكيد: `due` بيتحسب لحظيًا في كل مكان، مفيش أي تخزين له
 
 **اليوم ١١: اختبار تكاملي شامل للمسار الحرج**
-- [ ] سيناريو كامل يدوي: check-in → call → finish (مع بنود) → دفع → إقفال يوم
-- [ ] Jest integration test واحد على الأقل بيغطي السيناريو ده كامل
+- [x] سيناريو كامل يدوي: check-in → call → finish (مع بنود) → دفع → إقفال يوم
+- [x] Jest integration test واحد على الأقل بيغطي السيناريو ده كامل
 
 ---
 
