@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import './LoginPage.css';
 import { LOGIN_FORM_DEFAULTS, loginFormSchema, type LoginFormValues } from './schema';
 import { postLogin } from '../../lib/api/auth';
-import { setAuthToken } from '../../lib/api/client';
 import { useDocumentDirection } from '../../lib/i18n/useDocumentDirection';
 import { useTheme } from '../../lib/theme/useTheme';
+import { useAuthStore } from '../../lib/store/authStore';
+import { markSetupComplete } from '../../lib/setupState';
 import { BrandLogo } from '../../components/BrandLogo';
 import { AuthScreenTools } from '../../components/AuthScreenTools';
 
@@ -17,6 +18,9 @@ export function LoginPage() {
   useDocumentDirection();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
+  const setSession = useAuthStore((s) => s.setSession);
+  const redirectTo = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || '/dashboard';
 
   const {
     register,
@@ -47,10 +51,14 @@ export function LoginPage() {
     setIsSubmitting(false);
 
     if (res.ok) {
-      setAuthToken(res.data.token);
+      setSession({ token: res.data.token, employee: res.data.employee, activeBranch: res.data.active_branch });
+      // تسجيل دخول ناجح = دليل قاطع إن العيادة متظبّطة أصلًا — بيغطّي حالة
+      // إن العلامة المحلية اتمسحت أو إن المستخدم عدّى الإعداد قبل ما الفحص
+      // ده يتضاف (راجع lib/setupState.ts).
+      markSetupComplete();
       setSignedIn(true);
       // بانر النجاح بيبان لحظة قبل التنقّل — نفس نية شاشة الدخول الأصلية
-      setTimeout(() => navigate('/dashboard'), 700);
+      setTimeout(() => navigate(redirectTo, { replace: true }), 700);
       return;
     }
 

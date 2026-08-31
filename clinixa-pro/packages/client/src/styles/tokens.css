@@ -3,9 +3,8 @@
    المصدر: /Users/ahmedammar/clinixa/prototype/assets/tokens.css (+ docs/04-design-system.md)
    منسوخ لـ packages/client بنفس القيم بالحرف — أي تغيير هنا لازم يترجع لقرار
    موثّق في المصدر الأصلي، مش تعديل حر.
-   ⚠ ده نسخة جزئية (لحد نهاية قسم "٩. رسائل على مستوى الفورم" + الـ Stepper
-   وتذييل الشاشة) — بتغطي شاشات المصادقة (خارج App Shell) بس. أقسام الـ App
-   Shell (Sidebar/Topbar/Tables/...) هتتضاف لما الشاشات اللي محتاجاها تتبنى.
+   ⚠ نسخة كاملة لحد نهاية قسم "١٤. تقليل الحركة" — شاشات المصادقة + الـ App
+   Shell (Sidebar/Topbar/Tables/Tabs/Modal/...) اللي محتاجاها Phase 3.
    ═══════════════════════════════════════════════════════════════════════ */
 
 /* ═══ 0. الخطوط — محلية بالكامل، مفيش أي طلب إنترنت ═══
@@ -636,3 +635,776 @@ html[dir="ltr"] .input-wrap input.num { text-align: left; }
   font-size: var(--text-caption); color: var(--color-text-secondary);
   padding-top: var(--space-4);
 }
+/* ═══════════════════════════════════════════════════════════
+   9ب. APP SHELL — Screen 0 (Global Navigation Chrome)
+       موثّق مرة واحدة هنا وكل شاشة جوّا الـ Shell بتستهلكه.
+   ═══════════════════════════════════════════════════════════ */
+/* grid-template-rows + min-height:0 مش زيادة — من غيرهم صف الـ Grid بياخد
+   طول المحتوى (٢٥ صف = ١٨٨٤px) فالمحتوى بينزل تحت الشاشة من غير أي تمرير.
+   لوحة التحكم ما كشفتش ده لأن محتواها قصير، وأول جدول حقيقي كشفه */
+.app { position: relative; z-index: 1; display: grid; grid-template-columns: 252px 1fr; grid-template-rows: minmax(0, 1fr); height: 100vh; }
+.main { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.content { flex: 1; min-height: 0; overflow-y: auto; padding: var(--space-6); }
+
+/* ── Sidebar ── */
+.sidebar {
+  display: flex; flex-direction: column; gap: var(--space-2);
+  padding: var(--space-5) var(--space-4);
+  border-inline-end: 1px solid var(--color-border-glass);
+  background: var(--color-surface-glass);
+  backdrop-filter: var(--glass-blur-md); -webkit-backdrop-filter: var(--glass-blur-md);
+}
+.sidebar .brand-row { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2) var(--space-3) var(--space-6); }
+.sidebar .brand-row svg { width: 34px; height: 34px; flex: none; }
+.sidebar .brand-row .name { font-size: var(--text-h2); font-weight: 800; letter-spacing: -.02em; font-family: var(--font-en); }
+
+.nav-item {
+  display: flex; align-items: center; gap: var(--space-3);
+  padding: 10px var(--space-3); border-radius: var(--radius-md);
+  color: var(--color-text-secondary); font-size: var(--text-body); font-weight: 500;
+  width: 100%; text-align: start; text-decoration: none;
+  transition: background .18s, color .18s;
+}
+.nav-item:hover { background: var(--color-row-hover); color: var(--color-text-primary); }
+.nav-item.active { background: var(--color-nav-active-bg); color: var(--color-nav-active-text); font-weight: 700; }
+.nav-item:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--color-nav-active-bg); }
+.nav-item svg { flex: none; }
+.nav-spacer { flex: 1; }
+
+/* Sidebar بيتقلص لأيقونات بس على الشاشات الأضيق */
+@media (max-width: 1080px) {
+  .app { grid-template-columns: 76px 1fr; }
+  .sidebar .brand-row .name, .nav-item span { display: none; }
+  .nav-item { justify-content: center; padding-inline: 0; }
+  .sidebar .brand-row { justify-content: center; padding-inline: 0; }
+}
+
+/* ── Top bar ── */
+.topbar {
+  display: flex; align-items: center; gap: var(--space-3);
+  padding: var(--space-3) var(--space-6);
+  border-bottom: 1px solid var(--color-border-glass);
+  background: var(--color-surface-glass);
+  backdrop-filter: var(--glass-blur-md); -webkit-backdrop-filter: var(--glass-blur-md);
+  /* ⚠ `backdrop-filter` بيعمل **stacking context** — يعني أي `z-index` جوّه
+     الشريط (قوايم الفرع والتنبيهات والمستخدم بـ30) محبوس جوّاه ومابيقارنش
+     نفسه بمحتوى الصفحة. والشريط نفسه كان `static/auto` فبيترسم حسب ترتيبه
+     في الـDOM ⇒ أي محتوى بعده (التبويبات مثلًا) كان بيطلع **فوق** القوايم
+     المفتوحة. الترتيب هنا بيرفع الشريط كله فوق المحتوى (قرار 244) */
+  position: relative; z-index: 40;
+}
+.branch-switch {
+  display: flex; align-items: center; gap: var(--space-2);
+  /* نفس ارتفاع حقل البحث (42px) — الاتنين جنب بعض في الشريط، وأي فرق
+     بينهم بيبان فورًا كإن العناصر مش على خط واحد */
+  min-height: 42px;
+  padding: 7px var(--space-3); border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-subtle);
+  font-size: var(--text-body-sm); font-weight: 500;
+  transition: border-color .18s, background .18s;
+}
+.branch-switch:hover { border-color: var(--color-action-primary-default); background: var(--color-row-hover); }
+
+/* بعرض كامل في كل الشاشات: البحث العام هو الأداة الأساسية في الشريط،
+   وحدّ الـ420px كان بيسيب فراغ ميت واسع في نُص الشريط على الشاشات الكبيرة */
+.global-search { position: relative; flex: 1; }
+.global-search > svg:first-child {
+  position: absolute; inset-inline-start: var(--space-3); top: 50%; transform: translateY(-50%);
+  color: var(--color-text-secondary); pointer-events: none;
+}
+.global-search input {
+  width: 100%; padding: 9px var(--space-4); padding-inline-start: 42px;
+  border-radius: var(--radius-md); border: 1px solid var(--color-border-subtle);
+  background: var(--color-surface-glass-elevated); font-size: var(--text-body-sm);
+  outline: none; transition: border-color .18s, box-shadow .18s;
+}
+.global-search input::placeholder { color: var(--neutral-500); }
+.global-search input:focus-visible { border-color: var(--color-action-primary-default); box-shadow: 0 0 0 3px var(--color-nav-active-bg); }
+/* ⚠ الفاصل ده كان بيدفع أيقونات اليمين للحافة وقت ما البحث كان محدود بـ420px.
+   دلوقتي البحث نفسه بياخد الفاضل كله، فلو الفاصل فضل flex:1 هياخد نُص
+   المساحة منه. اتساب في الـHTML عشان مانلمسش 15 شاشة على فايدة صفر */
+.topbar-spacer { display: none; }
+
+.badge-dot {
+  position: absolute; top: 5px; inset-inline-end: 5px;
+  min-width: 17px; height: 17px; padding-inline: 4px; border-radius: var(--radius-full);
+  background: var(--error-600); color: #fff; font-size: 10px; font-weight: 700;
+  display: grid; place-items: center; font-family: var(--font-en);
+}
+.user-chip {
+  display: flex; align-items: center; gap: var(--space-2);
+  padding: 5px var(--space-3); border-radius: var(--radius-md); transition: background .18s;
+}
+.user-chip:hover { background: var(--color-row-hover); }
+.user-chip .u-name { font-size: var(--text-body-sm); font-weight: 500; line-height: 1.3; }
+.user-chip .u-role { font-size: var(--text-caption); color: var(--color-text-secondary); line-height: 1.3; }
+.user-chip .txt { text-align: start; }
+@media (max-width: 900px) { .user-chip .txt, .branch-switch span { display: none; } }
+
+/* ── Avatar بحروف أوائل الاسم — مفيش رفع صور في أي مكان في النظام ── */
+.avatar {
+  border-radius: var(--radius-full); flex: none;
+  display: grid; place-items: center; font-weight: 700;
+  background: var(--av-bg); color: var(--av-fg);
+}
+.avatar.sm { width: 30px; height: 30px; font-size: var(--text-caption); }
+.avatar.md { width: 36px; height: 36px; font-size: var(--text-body-sm); }
+.avatar.lg { width: 52px; height: 52px; font-size: var(--text-h2); }
+.av-1 { --av-bg: var(--sage-100);    --av-fg: var(--sage-800); }
+.av-2 { --av-bg: #E1EAF4;            --av-fg: var(--info-700); }
+.av-3 { --av-bg: var(--warning-100); --av-fg: var(--warning-800); }
+.av-4 { --av-bg: var(--neutral-200); --av-fg: var(--neutral-800); }
+.av-5 { --av-bg: #D9EDE3;            --av-fg: #1D6745; }
+.av-6 { --av-bg: #F5E2E0;            --av-fg: var(--error-700); }
+[data-theme="dark"] .av-1 { --av-bg: rgba(56,199,132,.20); --av-fg: var(--mint-300); }
+[data-theme="dark"] .av-2 { --av-bg: rgba(51,122,204,.24); --av-fg: var(--info-300); }
+[data-theme="dark"] .av-3 { --av-bg: rgba(227,154,28,.22); --av-fg: var(--warning-300); }
+[data-theme="dark"] .av-4 { --av-bg: rgba(255,255,255,.14); --av-fg: var(--neutral-200); }
+[data-theme="dark"] .av-5 { --av-bg: rgba(104,212,162,.20); --av-fg: var(--mint-200); }
+[data-theme="dark"] .av-6 { --av-bg: rgba(214,52,41,.24);  --av-fg: var(--error-300); }
+
+/* ── قوائم منسدلة (تنبيهات / حساب / نتائج البحث) ── */
+.menu-wrap { position: relative; }
+.dropdown {
+  position: absolute; inset-inline-end: 0; top: calc(100% + var(--space-2));
+  min-width: 260px; z-index: 30;
+  border-radius: var(--radius-lg); padding: var(--space-2);
+  background: var(--color-surface-glass-elevated);
+  backdrop-filter: var(--glass-blur-lg); -webkit-backdrop-filter: var(--glass-blur-lg);
+  border: 1px solid var(--color-border-glass);
+  box-shadow: var(--shadow-modal);
+  display: none;
+}
+[data-theme="dark"] .dropdown { background: rgba(46,51,48,.92); }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .dropdown { background: var(--color-background-canvas); }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .dropdown { background: var(--color-background-canvas); backdrop-filter: none; -webkit-backdrop-filter: none; }
+}
+.dropdown.open { display: block; }
+.dropdown-head {
+  padding: var(--space-2) var(--space-3); font-size: var(--text-caption);
+  font-weight: 700; color: var(--color-text-secondary);
+}
+.menu-item {
+  display: flex; align-items: flex-start; gap: var(--space-3);
+  width: 100%; text-align: start; text-decoration: none; color: inherit;
+  padding: var(--space-3); border-radius: var(--radius-md);
+  font-size: var(--text-body-sm); line-height: 1.5;
+  transition: background .15s;
+}
+.menu-item:hover { background: var(--color-row-hover); }
+.menu-item:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--color-nav-active-bg); }
+.menu-item svg { flex: none; margin-top: 2px; }
+.menu-item .meta { display: block; font-size: var(--text-caption); color: var(--color-text-secondary); margin-top: 2px; }
+.menu-item.danger { color: var(--color-status-error-text); }
+.menu-sep { height: 1px; background: var(--color-border-subtle); margin: var(--space-2) var(--space-1); }
+
+/* ── رأس الصفحة داخل الـ Shell ── */
+.page-head { display: flex; align-items: flex-end; gap: var(--space-4); margin-bottom: var(--space-5); flex-wrap: wrap; }
+.page-title { font-size: var(--text-h1); font-weight: 800; margin: 0; line-height: 1.3; letter-spacing: -.01em; }
+.page-sub { font-size: var(--text-body-sm); color: var(--color-text-secondary); margin: 2px 0 0; }
+.page-actions { margin-inline-start: auto; display: flex; gap: var(--space-2); }
+
+/* زرار ثانوي (الأفعال السريعة) */
+.btn-inline { width: auto; }
+.btn-secondary {
+  border: 1px solid var(--color-border-subtle); color: var(--color-text-primary);
+  background: var(--color-surface-glass-elevated); font-weight: 500;
+}
+.btn-secondary:hover { border-color: var(--color-action-primary-default); background: var(--color-row-hover); }
+
+/* ── بطاقات الإحصائيات ── */
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-4); margin-bottom: var(--space-8); }
+.stat-card { padding: var(--space-5); border-radius: var(--radius-lg); }
+.stat-top { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4); }
+.stat-icon { width: 38px; height: 38px; border-radius: var(--radius-md); display: grid; place-items: center; flex: none; }
+.stat-label { font-size: var(--text-body-sm); color: var(--color-text-secondary); font-weight: 500; }
+.stat-value { font-size: 30px; font-weight: 800; line-height: 1.1; letter-spacing: -.02em; }
+.stat-value.empty { color: var(--color-text-disabled); font-weight: 700; }
+.stat-foot { font-size: var(--text-caption); color: var(--color-text-secondary); margin-top: var(--space-2); }
+.tone-a .stat-icon { background: var(--color-nav-active-bg); color: var(--color-nav-active-text); }
+.tone-b .stat-icon { background: var(--color-status-info-bg); color: var(--color-status-info-text); }
+.tone-c .stat-icon { background: var(--color-status-warning-bg); color: var(--color-status-warning-text); }
+
+.section-title { font-size: var(--text-h3); font-weight: 700; margin: 0 0 var(--space-4); }
+
+/* ═══════════════════════════════════════════════════════════
+   10. شاشات القوائم — Toolbar + Table + Bulk bar + Pagination
+   المصدر: Foundations §3 (صف Table وBulk action bar وPagination)
+   + القواعد العامة على كل الجداول في الجرد (٨ شاشات بتستخدم ده)
+   ═══════════════════════════════════════════════════════════ */
+
+/* ─── شريط الأدوات فوق الجدول ─── */
+.toolbar { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; margin-bottom: var(--space-4); }
+.toolbar-spacer { flex: 1; min-width: 0; }
+
+/* فلترة القائمة — لازم تبان مختلفة عن البحث العام (قرار 35):
+   أيقونة list-filter مش عدسة، وخلفية مميّزة + زرار مسح وقت التفعيل */
+.filter-field { position: relative; display: flex; align-items: center; flex: 1 1 260px; max-width: 400px; }
+.filter-field .lead-icon {
+  position: absolute; inset-inline-start: var(--space-3);
+  color: var(--color-text-secondary); pointer-events: none; display: flex;
+}
+.filter-field input {
+  width: 100%; min-height: 44px; padding-block: 10px;
+  padding-inline: 42px 42px;
+  font-size: var(--text-body-sm);
+  border: 1px solid var(--color-border-subtle); border-radius: var(--radius-md);
+  background: var(--color-surface-glass-elevated);
+  transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
+}
+.filter-field input::placeholder { color: var(--neutral-500); }
+.filter-field input:focus-visible {
+  outline: none; border-color: var(--color-action-primary-default);
+  box-shadow: 0 0 0 3px var(--color-nav-active-bg);
+}
+.filter-field.active input { background: var(--color-nav-active-bg); border-color: var(--color-action-primary-default); }
+.filter-field.active .lead-icon { color: var(--color-nav-active-text); }
+.filter-clear {
+  position: absolute; inset-inline-end: 7px;
+  width: 30px; height: 30px; border-radius: var(--radius-sm);
+  display: none; place-items: center; color: var(--color-text-secondary);
+}
+.filter-field.active .filter-clear { display: grid; }
+.filter-clear:hover { background: var(--color-row-hover); color: var(--color-text-primary); }
+.filter-clear:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--color-nav-active-bg); }
+/* مساحة اللمس الفعلية 44×44 من غير ما الزرار يكبر بصريًا */
+.filter-clear::after { content: ''; position: absolute; inset: -7px; }
+
+/* Select مضغوط للفلاتر (الفرع، الحالة… ) — مش حقل فورم */
+.select-inline { position: relative; display: flex; align-items: center; }
+.select-inline select {
+  appearance: none; cursor: pointer;
+  min-height: 44px; padding-block: 10px; padding-inline: var(--space-4) var(--space-8);
+  font-size: var(--text-body-sm); font-weight: 500;
+  border: 1px solid var(--color-border-subtle); border-radius: var(--radius-md);
+  background: var(--color-surface-glass-elevated);
+}
+.select-inline select:hover { border-color: var(--color-action-primary-default); }
+.select-inline select:focus-visible {
+  outline: none; border-color: var(--color-action-primary-default);
+  box-shadow: 0 0 0 3px var(--color-nav-active-bg);
+}
+.select-inline .chev { position: absolute; inset-inline-end: var(--space-3); pointer-events: none; color: var(--color-text-secondary); display: flex; }
+/* أيقونة بادئة جوّه الـ select (تقويم، فرع…). التوسيط الرأسي صريح مش متروك
+   للـ static position، عشان لو الحاوية align-items غير center الأيقونة متطلعش فوق */
+.select-inline .lead-icon {
+  position: absolute; inset-inline-start: var(--space-3);
+  top: 50%; transform: translateY(-50%);
+  pointer-events: none; color: var(--color-text-secondary); display: flex;
+}
+
+/* ═══ رأس الكارت — العنوان جوّه الكارت مش فوقه (قرار 224) ═══
+   النظام كان فيه النمطين: عنوان طايف فوق الكارت، وعنوان جوّاه. العنوان
+   الطايف بيخلّي الكارت يبان مبتور عن اسمه، والمسافة بينهم بتتقري كأنها
+   فاصل بين قسمين. النمط الموحّد: جوّه الكارت، بخط فاصل تحته */
+/* ⚠ الحشو الجانبي **نفس حشو خلايا الجدول** (16px) — عشان العنوان يقع على
+   نفس خط أول عمود بالظبط. 20px كان بيخلّيه مزحلق 4px عن الرأس اللي تحته */
+.card-head {
+  display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap;
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+.card-head h2, .card-head h3 { font-size: var(--text-h3); font-weight: 700; margin: 0; }
+.card-head .spacer { flex: 1; }
+/* الكارت اللي جواه رأس، الجدول جواه مبقاش أول عنصر ⇒ الزوايا العليا تتلغي */
+.table-card > .card-head ~ table thead th:first-child,
+.table-card > .card-head ~ table thead th:last-child {
+  border-start-start-radius: 0; border-start-end-radius: 0;
+}
+/* ⚠ الكارت النصي عنده padding على نفسه — والرأس لازم يكون **ملزّق** في
+   حوافه، فالحشو بينتقل للمحتوى. لازم `.card-body` حوالين المحتوى */
+.detail-card:has(> .card-head) { padding: 0; }
+.detail-card > .card-head + .card-body { padding: var(--space-5); }
+
+/* ═══ شريط الفلاتر جوّه الكارت (قرار 207 · اتوحّد في قرار 230) ═══
+   ⚠ كان معرّف **محليًا في 5 شاشات بقيم مختلفة** — ونسخة ناقصة الحشو والخط
+   خلّت جدول المخزون شكله مختلف عن باقي النظام. التعريف بقى واحد هنا */
+.table-card > .card-toolbar {
+  display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+.table-card > .card-toolbar[hidden] { display: none; }
+.table-card > .card-toolbar .filter-field { max-width: none; flex: 1 1 240px; }
+/* الغلاف display:flex والـselect مابيمدّش لكامل ارتفاعه ⇒ مركزه بيطلع
+   مختلف عن مركز الحقل النصي. الحل: يمتدّ بالكامل (قرار 201) */
+.card-toolbar .select-inline { flex: 0 0 auto; height: 44px; align-items: stretch; }
+.card-toolbar .select-inline select { align-self: stretch; min-height: 44px; height: 44px; padding-block: 0; }
+/* كل أيقونة مطلقة جوّه الشريط محتاجة توسيط رأسي صريح بعد stretch (قرار 209) */
+.card-toolbar .select-inline .chev,
+.card-toolbar .select-inline .lead-icon,
+.card-toolbar .filter-field .lead-icon,
+.card-toolbar .filter-field .filter-clear { top: 50%; transform: translateY(-50%); }
+/* نفس إشارة "الفلتر شغّال" بتاعة الحقل النصي */
+.card-toolbar .select-inline.active select { background: var(--color-nav-active-bg); border-color: var(--color-action-primary-default); }
+.card-toolbar .select-inline.active .chev { color: var(--color-nav-active-text); }
+/* رأس الجدول مبقاش حافة الكارت العليا */
+.table-card > .card-toolbar ~ table thead th:first-child,
+.table-card > .card-toolbar ~ table thead th:last-child {
+  border-start-start-radius: 0; border-start-end-radius: 0;
+}
+
+/* ─── شريط الأفعال الجماعية — فوق الجدول، وخلفيته nav-active-bg
+       عشان يبان إنه حالة مؤقتة مش جزء ثابت من الشاشة (Foundations §3) ─── */
+.bulk-bar {
+  display: none; align-items: center; gap: var(--space-2); flex-wrap: wrap;
+  padding: var(--space-2) var(--space-4);
+  margin-bottom: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-nav-active-bg);
+  border: 1px solid var(--color-action-primary-default);
+}
+.bulk-bar.on { display: flex; animation: bulkIn .18s ease; }
+.bulk-count { font-weight: 700; color: var(--color-nav-active-text); font-size: var(--text-body-sm); }
+.bulk-bar .toolbar-spacer { flex: 1; }
+@keyframes bulkIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+
+/* ─── الجدول ─── */
+.table-card { border-radius: var(--radius-lg); }
+/* table-layout: fixed مقصود — من غيره الأعمدة بتتمدد على حسب أطول اسم
+   والجدول بيطلع برّه الكارت. الأعمدة بعرض ثابت، وعمود الاسم بياخد الباقي
+   وبيقصّ بـ ellipsis. وده كمان بيخلي الأعمدة متطابقة في الـ٧ شاشات كلها */
+.data-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+/* العروض دي مقيسة على أطول محتوى فعلي لكل عمود + الحشو، مش أرقام تقديرية —
+   الفاضل كله بيروح لعمود الاسم عشان أقل عدد ممكن من الأسماء يتقص */
+.data-table .c-check  { width: 52px; }
+.data-table .c-age    { width: 62px; }
+.data-table .c-phone  { width: 124px; }
+.data-table .c-branch { width: 120px; }
+.data-table .c-visits { width: 112px; }
+.data-table .c-last   { width: 134px; } /* مقيس على أطول تاريخ: "13 أغسطس 2026" */
+.data-table .c-date   { width: 134px; } /* نفس قياس التاريخ — بيتكرر في سجلات الحضور والمدفوعات وتنبيهات النظام */
+.data-table .c-time   { width: 96px; }
+.data-table .c-due    { width: 118px; }
+.data-table .c-act    { width: 56px; }
+.data-table thead th {
+  position: sticky; top: 0; z-index: 2;
+  text-align: start; white-space: nowrap;
+  font-size: var(--text-caption); font-weight: 700; letter-spacing: .01em;
+  color: var(--color-text-secondary);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface-glass-elevated);
+  backdrop-filter: var(--glass-blur-md); -webkit-backdrop-filter: var(--glass-blur-md);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+.data-table thead th:first-child { border-start-start-radius: var(--radius-lg); }
+.data-table thead th:last-child  { border-start-end-radius: var(--radius-lg); }
+.data-table td {
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-body-sm);
+  border-bottom: 1px solid var(--color-border-subtle);
+  vertical-align: middle;
+  /* الأعمدة ما بتكسرش على سطرين — التاريخ والمبلغ والتليفون يفضلوا سطر واحد.
+     العمود اللي بيضيق بيتخفي بالكامل (media queries تحت) مش بيتكسر */
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* الخليتين دول فيهم عناصر بتخرج برّه حدودهم بشكل مقصود
+   (مساحة لمس الـ Checkbox، وقايمة أفعال الصف) — ممنوع القص عليهم */
+.data-table td.c-check, .data-table td.c-act { overflow: visible; }
+/* ═══ حافتَي الصف (قرار 225) ═══
+   أول عمود بيلزق في حافة البداية وآخر عمود في حافة النهاية — وإلا العمود
+   الأخير المتوسّط بيسيب فراغ ميّت في آخر الصف والجدول يبان مايل ناحية.
+   قاعدة عامة بمواصفة ضعيفة عشان أي جدول يقدر يتجاوزها لو ليه سبب */
+.data-table thead th:last-child, .data-table tbody td:last-child { text-align: end; }
+.data-table tbody tr { transition: background .15s ease; }
+.data-table tbody tr:hover { background: var(--color-row-hover); }
+.data-table tbody tr.selected { background: var(--color-nav-active-bg); }
+.data-table tbody tr:last-child td { border-bottom: none; }
+.data-table tbody tr:focus-within { background: var(--color-row-hover); }
+
+/* خلية الـ Checkbox — مساحة اللمس 44×44 كاملة */
+/* 8px + 44px (مساحة اللمس) + 0 = 52px بالظبط، فالـ Checkbox ما يزحفش برّه خليته */
+.c-check { padding-inline: var(--space-2) 0 !important; }
+.cbx-hit { display: grid; place-items: center; width: 44px; height: 44px; margin-block: -10px; cursor: pointer; }
+.cbx { width: 18px; height: 18px; accent-color: var(--color-action-primary-default); cursor: pointer; }
+.cbx:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--color-nav-active-bg); border-radius: 3px; }
+
+/* خلية الشخص — Avatar + الاسم + الرقم تحته */
+.cell-person { display: flex; align-items: center; gap: var(--space-3); min-width: 0; }
+.cell-person .txt { min-width: 0; }
+.cell-person .pname {
+  display: block; font-weight: 600; color: var(--color-text-primary);
+  text-decoration: none; line-height: 1.4;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  /* أسماء المرضى بتفضل عربي حتى والواجهة إنجليزي. من غير plaintext الاسم
+     بيتقص من أوله في وضع LTR (يعني الاسم الأول نفسه بيروح) — plaintext
+     بتخلي اتجاه الاسم يتحدد من حروفه هو، فالقص بيحصل من آخره زي ما المفروض */
+  unicode-bidi: plaintext;
+}
+html[dir="ltr"] .cell-person .pname { text-align: left; }
+.cell-person .pname:hover { color: var(--color-link); text-decoration: underline; }
+.cell-person .pname:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--color-nav-active-bg); border-radius: var(--radius-sm); }
+.cell-person .pid { display: block; font-size: var(--text-caption); color: var(--color-text-secondary); line-height: 1.4; }
+
+/* عمود المستحقات — رقم محسوب وقت العرض، مش حقل في ملف المريض */
+.due-amount { font-weight: 700; color: var(--color-status-error-text); white-space: nowrap; }
+.due-none { color: var(--color-text-disabled); }
+
+.c-act { text-align: end; }
+.row-menu-btn {
+  position: relative; width: 34px; height: 34px; border-radius: var(--radius-sm);
+  display: grid; place-items: center; color: var(--color-text-secondary);
+}
+.row-menu-btn::after { content: ''; position: absolute; inset: -5px; }
+.row-menu-btn:hover { background: var(--color-row-hover); color: var(--color-text-primary); }
+.row-menu-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--color-nav-active-bg); }
+.row-menu-btn[aria-expanded="true"] { background: var(--color-row-hover); color: var(--color-text-primary); }
+
+/* Badge — حالة أي كيان معطّل (مريض/موظف/صنف) */
+.badge { display: inline-flex; align-items: center; gap: 4px; font-size: var(--text-caption); font-weight: 700; padding: 1px 8px; border-radius: var(--radius-full); }
+.badge-muted { background: var(--color-border-subtle); color: var(--color-text-secondary); }
+
+/* ─── Pagination ─── */
+.pagination {
+  display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap;
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--color-border-subtle);
+}
+.page-info { font-size: var(--text-body-sm); color: var(--color-text-secondary); margin-inline-end: auto; }
+.page-btn {
+  position: relative;
+  min-width: 36px; height: 36px; padding-inline: 8px;
+  display: grid; place-items: center;
+  font-size: var(--text-body-sm); font-weight: 600;
+  border: 1px solid var(--color-border-subtle); border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+}
+.page-btn:hover:not(:disabled):not([aria-current]) { border-color: var(--color-action-primary-default); background: var(--color-row-hover); color: var(--color-text-primary); }
+.page-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--color-nav-active-bg); }
+.page-btn[aria-current="page"] {
+  background: var(--color-action-primary-default); color: var(--color-action-primary-text);
+  border-color: transparent; cursor: default;
+}
+.page-btn:disabled { opacity: .4; cursor: not-allowed; }
+/* مساحة اللمس 44×44 من غير ما الزرار يكبر بصريًا */
+.page-btn::after { content: ''; position: absolute; inset: -4px; }
+.page-gap { color: var(--color-text-disabled); padding-inline: 2px; }
+/* أسهم الـ Pagination بتنعكس في RTL — Foundations §4 */
+[dir="rtl"] .mirror-rtl { transform: scaleX(-1); }
+
+/* ─── الحالات الفارغة ─── */
+.empty-state { text-align: center; padding: var(--space-16) var(--space-6); }
+.empty-state .empty-icon {
+  width: 56px; height: 56px; border-radius: var(--radius-full);
+  display: grid; place-items: center; margin: 0 auto var(--space-4);
+  background: var(--color-nav-active-bg); color: var(--color-nav-active-text);
+}
+.empty-state .empty-title { font-size: var(--text-h3); font-weight: 700; margin: 0 0 var(--space-2); }
+.empty-state .empty-text { font-size: var(--text-body-sm); color: var(--color-text-secondary); margin: 0 auto var(--space-5); max-width: 42ch; }
+
+/* ─── Skeleton التحميل ─── */
+.skel { display: block; height: 11px; border-radius: var(--radius-full); background: var(--color-border-subtle); position: relative; overflow: hidden; }
+.skel::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, var(--color-row-hover), transparent);
+  animation: shimmer 1.3s linear infinite;
+}
+.skel.circle { height: 36px; width: 36px; border-radius: var(--radius-full); flex: none; }
+@keyframes shimmer { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+
+/* ═══════════════════════════════════════════════════════════
+   11. شاشات الملفات — Breadcrumb + Tabs + حقول العرض + Modal
+   بيتعاد استخدامها في ملف المريض والصنف والموظف
+   ═══════════════════════════════════════════════════════════ */
+
+/* ─── Breadcrumb — الأعمق على الشمال في العربي (IA §RTL) ─── */
+.breadcrumb { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-body-sm); margin-bottom: var(--space-3); flex-wrap: wrap; }
+.breadcrumb a { color: var(--color-text-secondary); text-decoration: none; border-radius: var(--radius-sm); }
+.breadcrumb a:hover { color: var(--color-link); text-decoration: underline; }
+.breadcrumb a:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--color-nav-active-bg); }
+.breadcrumb .sep { color: var(--color-text-disabled); display: flex; }
+.breadcrumb [aria-current="page"] { color: var(--color-text-primary); font-weight: 600; }
+
+/* ─── هيدر الملف — Avatar كبير + الاسم + الحالة + الأفعال ─── */
+.entity-head {
+  display: flex; align-items: center; gap: var(--space-4); flex-wrap: wrap;
+  padding: var(--space-5); border-radius: var(--radius-lg); margin-bottom: var(--space-5);
+}
+.entity-head .who { display: flex; align-items: center; gap: var(--space-4); min-width: 0; }
+.entity-head .titles { min-width: 0; }
+.entity-head .titles h1 {
+  font-size: var(--text-h1); font-weight: 800; margin: 0; line-height: 1.3; letter-spacing: -.01em;
+  display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap;
+}
+.entity-head .titles .meta { font-size: var(--text-body-sm); color: var(--color-text-secondary); margin-top: 2px; }
+.entity-head .acts { margin-inline-start: auto; display: flex; gap: var(--space-2); flex-wrap: wrap; }
+
+/* "نشط" لازم يبان أخضر براند واضح جنب "معطّل" الرمادي — مش درجة تانية
+   من الرمادي. وبيستخدم توكنات البادج الخاصة، عشان التعديل ده يمسّ **الحالة
+   بس** ومايغيّرش أي أخضر تاني في النظام (مبالغ الكاش مثلًا) — قرار 214 */
+.badge-success { background: var(--color-status-badge-bg); color: var(--color-status-badge-text); }
+/* حالات تدفّق المريض في يومه (حضر/في الانتظار/عند الطبيب) — أول استخدام
+   في لوحة التحكم، ومتوقع يتكرر في أي شاشة تانية بتعرض حالة زيارة حية */
+.badge-warning { background: var(--color-status-warning-bg); color: var(--color-status-warning-text); }
+.badge-info    { background: var(--color-status-info-bg);    color: var(--color-status-info-text); }
+/* الحالة الأنشط دلوقتي (عند الطبيب) — لون الفعل الأساسي نفسه، مش تلوين حالة عادي */
+.badge-primary { background: var(--color-action-primary-default); color: var(--color-action-primary-text); }
+/* فشل حقيقي محتاج تصرّف (فشل إرسال رسالة) — مختلف عن warning اللي معناه
+   "خد بالك"؛ ده معناه "الحاجة دي مانجحتش" */
+.badge-error   { background: var(--color-status-error-bg);   color: var(--color-status-error-text); }
+
+/* ─── Tabs ─── */
+.tabs {
+  display: flex; gap: var(--space-1); flex-wrap: wrap;
+  border-bottom: 1px solid var(--color-border-subtle);
+  margin-bottom: var(--space-5);
+}
+.tab {
+  position: relative; padding: var(--space-3) var(--space-4);
+  font-size: var(--text-body-sm); font-weight: 600; color: var(--color-text-secondary);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  margin-bottom: -1px; border-bottom: 2px solid transparent;
+  display: flex; align-items: center; gap: var(--space-2); min-height: 44px;
+}
+.tab:hover { color: var(--color-text-primary); background: var(--color-row-hover); }
+.tab:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--color-nav-active-bg); }
+/* نفس المكوّن بيخدم حالتين:
+   • تبويبات لوحات في نفس الصفحة  → <button role="tab" aria-selected>
+   • تنقّل بين شاشات القسم الواحد → <a aria-current="page">
+   الشكل واحد بقصد (اتساق بصري)، والفرق في الـ HTML semantics بس */
+.tab[aria-selected="true"],
+.tab[aria-current="page"] {
+  color: var(--color-nav-active-text); border-bottom-color: var(--color-action-primary-default);
+}
+.tab { text-decoration: none; }
+/* قسم موجود في البنية بس لسه ما اتبناش — مش رابط ومش قابل للضغط */
+.tab[aria-disabled="true"] { color: var(--color-text-disabled); cursor: not-allowed; }
+.tab[aria-disabled="true"]:hover { background: transparent; color: var(--color-text-disabled); }
+.tab .count {
+  font-size: var(--text-caption); font-weight: 700;
+  background: var(--color-border-subtle); color: var(--color-text-secondary);
+  padding: 0 7px; border-radius: var(--radius-full);
+}
+.tab[aria-selected="true"] .count,
+.tab[aria-current="page"] .count { background: var(--color-nav-active-bg); color: var(--color-nav-active-text); }
+/* وسم "قريبًا" — أداة نموذج أولي، مش عنصر منتج */
+.tab .soon { font-size: 10px; font-weight: 700; opacity: .75; }
+
+/* ─── حقول العرض (Read-only) ─── */
+.detail-card { padding: var(--space-5); border-radius: var(--radius-lg); }
+.detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-5); }
+.detail-item { min-width: 0; }
+.detail-item.wide { grid-column: 1 / -1; }
+.detail-label { display: block; font-size: var(--text-caption); font-weight: 600; color: var(--color-text-secondary); margin-bottom: 3px; }
+.detail-value { font-size: var(--text-body); line-height: 1.6; overflow-wrap: anywhere; }
+.detail-value.muted { color: var(--color-text-disabled); }
+
+/* ─── Modal ─── */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 60;
+  background: rgba(20,30,25,.45);
+  display: none; place-items: center; padding: var(--space-4);
+}
+.modal-overlay.open { display: grid; }
+.modal {
+  width: 100%; max-width: 460px; max-height: 90vh; overflow-y: auto;
+  border-radius: var(--radius-lg); padding: var(--space-6);
+  background: var(--color-surface-glass-elevated);
+  backdrop-filter: var(--glass-blur-lg); -webkit-backdrop-filter: var(--glass-blur-lg);
+  border: 1px solid var(--color-border-glass);
+  box-shadow: var(--shadow-modal);
+  animation: modalIn .18s ease;
+}
+[data-theme="dark"] .modal { background: rgba(46,51,48,.94); }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .modal { background: var(--color-background-canvas); }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .modal { background: var(--color-background-canvas); backdrop-filter: none; -webkit-backdrop-filter: none; }
+}
+@keyframes modalIn { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
+.modal h2 { font-size: var(--text-h2); font-weight: 700; margin: 0 0 var(--space-2); line-height: 1.35; }
+.modal .modal-sub { font-size: var(--text-body-sm); color: var(--color-text-secondary); margin: 0 0 var(--space-5); }
+.modal-foot { display: flex; gap: var(--space-2); justify-content: flex-end; margin-top: var(--space-6); flex-wrap: wrap; }
+.modal-foot .btn { width: auto; }
+.modal textarea {
+  width: 100%; min-height: 116px; resize: vertical;
+  padding: var(--space-3) var(--space-4); font-size: var(--text-body-sm); line-height: 1.7;
+  border: 1px solid var(--color-border-subtle); border-radius: var(--radius-md);
+  background: var(--color-surface-glass-elevated); font-family: inherit;
+}
+.modal textarea:focus-visible { outline: none; border-color: var(--color-action-primary-default); box-shadow: 0 0 0 3px var(--color-nav-active-bg); }
+
+/* ═══ زرار ثالثي ═══ اتعرّف في شاشة 10 (قرار 204) وبقى مستخدم في شاشة 4
+   كمان (قرار 215)، فاتنقل هنا بتعريف واحد بدل نسختين ممكن يختلفوا.
+   شكله ثالثي (بلا خلفية ولا حد) ولونه أساسي — فعل ثانوي بس مش باهت */
+.btn.btn-tertiary {
+  background: transparent; border: 1px solid transparent;
+  color: var(--color-action-primary-default); font-weight: 700;
+}
+.btn.btn-tertiary:hover { background: var(--color-nav-active-bg); color: var(--color-nav-active-text); }
+.btn.btn-tertiary:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--color-nav-active-bg); }
+
+/* زر تحذيري ثانوي — التعطيل. مش حذف، فمش لون صلب ولا سلة مهملات */
+.btn-danger-soft { background: transparent; border: 1px solid var(--color-status-error-border); color: var(--color-status-error-text); }
+.btn-danger-soft:hover:not(:disabled) { background: var(--color-status-error-bg); border-color: var(--color-status-error-text); }
+
+/* بانر خطأ على مستوى الشاشة + زر إعادة محاولة */
+.notice-error {
+  background: var(--color-status-error-bg);
+  border-color: var(--color-status-error-border);
+  color: var(--color-status-error-text);
+}
+.notice .notice-act { margin-inline-start: auto; }
+
+/* ═══════════════════════════════════════════════════════════
+   12. Responsive — Desktop-first، وقابلة للاستخدام لحد 320px
+   ═══════════════════════════════════════════════════════════ */
+/* Sidebar بيتحوّل لأيقونات بس قبل ما الجدول يزنق — Variant موثّق في Foundations §3 */
+@media (max-width: 1100px) {
+  .app { grid-template-columns: 72px 1fr; }
+  .sidebar { padding-inline: var(--space-2); }
+  .sidebar .brand-row { justify-content: center; padding-inline: 0; }
+  .sidebar .brand-row .name { display: none; }
+  .nav-item { justify-content: center; padding-inline: 0; }
+  .nav-item span { display: none; }
+}
+/* إخفاء الأعمدة بالترتيب — الأقل أهمية الأول، مش تصغير نص ولا كسر أرقام.
+   ⚠ القاعدة المشتركة هي **الترتيب**، مش نقاط القياس: النقطة اللي العمود
+   بيتخفي عندها بتعتمد على عدد أعمدة الجدول نفسه. جدول المرضى (٩ أعمدة)
+   بيبدأ يخفي من 1240px، وجدول بـ٦ أعمدة لو خد نفس الأرقام هيخفي أعمدة
+   وهو لسه فيه مكان. فكل شاشة قايمة بتعرّف نقاطها في ملفها. */
+
+/* الـ Top Bar بيفضل عناصره كاملة لحد ٧٦٠px، وبعد كده النصوص بتتشال والأيقونات
+   بتفضل — من غير كده الشريط بيطوّل الصفحة كلها ويعمل تمرير أفقي */
+@media (max-width: 760px) {
+  .topbar { gap: var(--space-2); }
+  .global-search, .global-search input { min-width: 0; }
+  .branch-switch > span { display: none; }
+  .user-chip .txt { display: none; }
+  .page-actions { flex-wrap: wrap; }
+  /* أفعال الملف بتنزل تحت الاسم بدل ما تتزنق جنبه */
+  .entity-head .acts { margin-inline-start: 0; width: 100%; }
+  .tabs { gap: 0; }
+  .tab { padding-inline: var(--space-3); }
+}
+
+@media (max-width: 560px) {
+  .screen { padding: var(--space-4); }
+  .card { padding: var(--space-6); }
+  .brand { margin-bottom: var(--space-6); }
+  .brand-logo { width: 52px; height: 52px; }
+  .brand-name { font-size: 22px; }
+  /* الشريط بيلف لسطرين بدل ما نشيل أي أداة منه — البحث بياخد السطر التاني كامل */
+  .topbar { flex-wrap: wrap; padding-inline: var(--space-4); }
+  .global-search { order: 2; flex-basis: 100%; max-width: none; }
+  .topbar-spacer { display: none; }
+  .content { padding: var(--space-4); }
+  .filter-field { max-width: none; }
+  .data-table td, .data-table thead th { padding-inline: var(--space-3); }
+  .page-info { margin-inline-end: 0; width: 100%; }
+
+  /* تحت 560px الأعمدة الأساسية (الاسم + الهاتف + المستحقات) مش بتتزنق في العرض
+     المتاح، وإخفاء أي واحد فيهم بيخلي الجدول بلا فايدة. فبنسمح بتمرير أفقي هنا
+     كملاذ أخير. ⚠ في العرض ده قايمة أفعال الصف بتتقص — والمقاس ده مش مقاس
+     الاستخدام الحقيقي (التطبيق Desktop على جهاز العيادة)، فده fallback مش تصميم */
+  .table-card { overflow-x: auto; }
+  .data-table { min-width: 420px; }
+  .data-table .c-check { width: 44px; }
+  .data-table .c-phone { width: 118px; }
+  .data-table .c-due   { width: 104px; }
+  .data-table .c-act   { width: 48px; }
+}
+/* شاشات قصيرة (لابتوب 1366×768 مع شريط مهام) — نقلّل الفراغ الرأسي مش حجم النص */
+@media (max-height: 720px) {
+  .brand { margin-bottom: var(--space-5); gap: var(--space-2); }
+  .brand-logo { width: 50px; height: 50px; }
+  .card { padding: var(--space-6); }
+  .body-wrap { padding-block: var(--space-2); }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   13. إيصال الطباعة — ورقة منفصلة بالكامل عن ستايل الشاشة
+   بدون زجاج ولا ظلال ولا Dark mode (Foundations §3)
+   ═══════════════════════════════════════════════════════════ */
+.receipt { display: none; }
+.print-sheet { display: none; }
+
+@media print {
+  /* الشاشة كلها بتختفي — الورقة فيها الإيصال بس */
+  .app, .bg-blobs, .modal-overlay { display: none !important; }
+  html, body { background: #fff !important; color: #000 !important; overflow: visible !important; height: auto !important; }
+
+  .receipt {
+    display: block !important;
+    font-family: var(--font-ar);
+    max-width: 80mm; margin: 0 auto; padding: 8mm 4mm;
+    color: #000; background: #fff;
+    font-size: 12pt; line-height: 1.7;
+  }
+  .receipt .r-clinic { font-size: 15pt; font-weight: 800; text-align: center; margin: 0 0 2mm; }
+  .receipt .r-branch { font-size: 10pt; text-align: center; margin: 0 0 5mm; }
+  .receipt .r-title {
+    font-size: 12pt; font-weight: 700; text-align: center;
+    border-block: 1px solid #000; padding-block: 2mm; margin-bottom: 4mm;
+  }
+  .receipt .r-line { display: flex; justify-content: space-between; gap: 4mm; padding-block: 1.5mm; }
+  .receipt .r-line .r-key { font-weight: 400; }
+  .receipt .r-line .r-val { font-weight: 700; text-align: end; }
+  .receipt .r-total {
+    display: flex; justify-content: space-between; gap: 4mm;
+    border-top: 1px solid #000; margin-top: 3mm; padding-top: 3mm;
+    font-size: 14pt; font-weight: 800;
+  }
+  .receipt .r-foot { text-align: center; font-size: 9pt; margin-top: 6mm; }
+  /* الأرقام تفضل LTR جوّا الجملة العربية حتى في الطباعة */
+  .receipt .num { direction: ltr; unicode-bidi: isolate; }
+
+  /* ورقة طباعة عامة (A4) — لأي محتوى طبي محتاج طباعة عادية، بخلاف إيصال
+     الدفع اللي مقاسه طابعة حرارية 80mm. نفس مبدأ .receipt: بدون زجاج/ظلال/
+     Dark mode. أول استخدام: ملخص المريض الطبي والروشتات (ملف المريض) */
+  .print-sheet {
+    display: block !important;
+    font-family: var(--font-ar); color: #000; background: #fff;
+    max-width: 180mm; margin: 0 auto; padding: 12mm;
+    font-size: 11pt; line-height: 1.7;
+  }
+  .print-sheet .ps-clinic { font-size: 16pt; font-weight: 800; text-align: center; margin: 0 0 1mm; }
+  .print-sheet .ps-sub { font-size: 9pt; text-align: center; color: #333; margin: 0 0 6mm; }
+  .print-sheet h2 { font-size: 12pt; font-weight: 800; border-bottom: 1px solid #000; padding-bottom: 2mm; margin: 6mm 0 3mm; }
+  .print-sheet h2:first-of-type { margin-top: 0; }
+  .print-sheet .ps-row { display: flex; justify-content: space-between; gap: 4mm; padding-block: 1mm; font-size: 10.5pt; }
+  .print-sheet .ps-row .k { color: #333; }
+  .print-sheet .ps-row .v { font-weight: 700; }
+  .print-sheet ul { margin: 0; padding-inline-start: 5mm; }
+  .print-sheet li { padding-block: .8mm; }
+  .print-sheet table { width: 100%; border-collapse: collapse; margin-top: 2mm; }
+  .print-sheet th, .print-sheet td { border: 1px solid #999; padding: 2mm; font-size: 10pt; text-align: start; }
+  .print-sheet .ps-foot { text-align: center; font-size: 8.5pt; color: #333; margin-top: 8mm; }
+  .print-sheet .num { direction: ltr; unicode-bidi: isolate; }
+
+  @page { margin: 0; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   14. تقليل الحركة
+   ═══════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  .form-error.on, .bulk-bar.on, .modal { animation: none; }
+  .skel::after { animation: none; opacity: 0; } /* الشيمر زخرفة بحتة */
+  .btn .spinner { animation: spin 1.6s linear infinite; } /* مؤشر حالة مش زخرفة */
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ١٥. تلميح نجاح عائم (Success toast — Floating variant)
+   Design System §3: "غير مانع، بيظهر ويختفي لوحده (٢.٥–٣ ثواني)" —
+   مستخدم في المرضى/الحضور/المدفوعات، فمكانه هنا مش مكرر بملف كل شاشة.
+   ═══════════════════════════════════════════════════════════ */
+.ok-toast {
+  position: fixed; inset-block-end: var(--space-6); inset-inline-start: 50%;
+  transform: translate(50%, 12px); z-index: 60;
+  display: none; align-items: center; gap: var(--space-2);
+  padding: var(--space-3) var(--space-5); border-radius: var(--radius-full);
+  background: var(--color-status-success-bg); color: var(--color-status-success-text);
+  border: 1px solid var(--color-status-success-border);
+  box-shadow: var(--shadow-modal); font-size: var(--text-body-sm); font-weight: 700;
+}
+html[dir="ltr"] .ok-toast { transform: translate(-50%, 12px); }
+.ok-toast.on { display: flex; animation: okIn .2s ease forwards; }
+@keyframes okIn { to { transform: translate(50%, 0); } }
+html[dir="ltr"] .ok-toast.on { animation: okInLtr .2s ease forwards; }
+@keyframes okInLtr { to { transform: translate(-50%, 0); } }

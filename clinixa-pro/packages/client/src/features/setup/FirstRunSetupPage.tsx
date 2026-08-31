@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import './FirstRunSetupPage.css';
 import {
   FIRST_RUN_SETUP_DEFAULTS,
@@ -13,6 +14,7 @@ import {
 import { LICENSE_KEY_RE } from '../../lib/validation/licenseKey';
 import { postFirstRunSetup, type FirstRunSetupRequest } from '../../lib/api/setup';
 import { setAuthToken } from '../../lib/api/client';
+import { markSetupComplete } from '../../lib/setupState';
 import { ar } from '../../lib/i18n/locales/ar';
 import { useDocumentDirection } from '../../lib/i18n/useDocumentDirection';
 import { useTheme } from '../../lib/theme/useTheme';
@@ -111,11 +113,20 @@ export function FirstRunSetupPage() {
 
     if (res.ok) {
       setAuthToken(res.data.token);
+      markSetupComplete();
       setDone({
         clinicName: values.clinicNameAr,
         username: values.username,
         questionLabel: t(`setup.security.questions.${values.securityQuestion}`),
       });
+      return;
+    }
+
+    // العيادة متظبّطة بالفعل على الجهاز ده (409) — إشارة أكيدة من الباك، أوثق من أي علامة محلية.
+    // نسجّلها فورًا عشان "/" يوصّل لتسجيل الدخول من غير ما يعرض الويزارد تاني.
+    if (res.error.code === 'CONFLICT') {
+      markSetupComplete();
+      setSubmitError(res.error.message);
       return;
     }
 
@@ -169,6 +180,14 @@ export function FirstRunSetupPage() {
                     />
                   ))}
                 </div>
+
+                {step === 1 && (
+                  <div className="row-link">
+                    <Link className="link" to="/login">
+                      {t('setup.alreadySetUp')}
+                    </Link>
+                  </div>
+                )}
 
                 <div className="pane on">
                   {step === 1 && <LicenseStep form={form} />}

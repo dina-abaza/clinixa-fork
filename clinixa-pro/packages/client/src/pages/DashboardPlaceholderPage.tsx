@@ -5,8 +5,8 @@
  */
 export function DashboardPlaceholderPage() {
   return (
-    <div style={{ padding: 24 }}>
-      <h1>Dashboard — coming next</h1>
+    <div className="page-head">
+      <h1 className="page-title">Dashboard — coming next</h1>
     </div>
   );
 }

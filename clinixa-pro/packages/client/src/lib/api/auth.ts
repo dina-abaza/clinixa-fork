@@ -1,3 +1,4 @@
+import type { EmployeeRole, Permission } from '@clinixa/shared';
 import { apiClient } from './client';
 import type { ApiResponse } from './types';
 import { extractApiError } from './extractApiError';
@@ -12,7 +13,7 @@ export interface LoginRequest {
   password: string;
 }
 
-export type Permission = string;
+export type { Permission };
 
 export interface LoginResponseData {
   token: string;
@@ -20,7 +21,7 @@ export interface LoginResponseData {
     id: string;
     name_ar: string;
     username: string;
-    role: string;
+    role: EmployeeRole;
     is_owner: boolean;
     branch_id: string | null;
     permissions: Permission[];
@@ -90,6 +91,36 @@ export async function postForgotPassword(
       '/auth/forgot-password',
       payload,
     );
+    return res.data;
+  } catch (err) {
+    return extractApiError(err);
+  }
+}
+
+/**
+ * `GET /api/auth/session` — نفس شكل بيانات `LoginResponseData` بدون `token`
+ * (التوكن بيتبعت في الهيدر أصلًا). بيتستخدم لاسترجاع الجلسة بعد Refresh
+ * للصفحة أو فتح التطبيق من جديد، طالما التوكن لسه محفوظ ومعروف.
+ */
+export type SessionResponseData = Omit<LoginResponseData, 'token'>;
+
+export async function getSession(): Promise<ApiResponse<SessionResponseData>> {
+  try {
+    const res = await apiClient.get<ApiResponse<SessionResponseData>>('/auth/session');
+    return res.data;
+  } catch (err) {
+    return extractApiError(err);
+  }
+}
+
+/** `POST /api/auth/logout` — راجع authService.logout() في auth.service.ts. */
+export interface LogoutResponseData {
+  message: string;
+}
+
+export async function postLogout(): Promise<ApiResponse<LogoutResponseData>> {
+  try {
+    const res = await apiClient.post<ApiResponse<LogoutResponseData>>('/auth/logout');
     return res.data;
   } catch (err) {
     return extractApiError(err);
