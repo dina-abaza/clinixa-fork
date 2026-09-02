@@ -9,6 +9,7 @@ import patientsRoutes from './modules/patients/patients.routes';
 import medicationsRouter from './modules/patients/medications.routes';
 import attendanceRoutes from './modules/attendance/attendance.routes';
 import { paymentsRouter, chargesRouter, daySummaryRouter } from './modules/payments/payments.routes';
+import backupRoutes from './modules/backup/backup.routes';
 
 const app = express();
 
@@ -40,6 +41,7 @@ app.use('/api/attendance', attendanceRoutes);
 app.use('/api/payments', paymentsRouter);
 app.use('/api/charges', chargesRouter);
 app.use('/api/day-summary', daySummaryRouter);
+app.use('/api/backup', backupRoutes);
 
 // Middleware الأخطاء في النهاية
 app.use(errorHandler);

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { LoginResponseData } from '../api/auth';
-import { setAuthToken } from '../api/client';
+import { apiClient, setAuthToken } from '../api/client';
 
 /** بيانات الفرع النشط — نفس `active_branch` في `LoginResponseData`/`SessionResponseData` */
 export type ActiveBranch = LoginResponseData['active_branch'];
@@ -52,4 +52,28 @@ export const useAuthStore = create<AuthState>()(
       partialize: (state) => ({ token: state.token }),
     },
   ),
+);
+
+/**
+ * لو جلسة شغّالة فعلًا (`status === 'authenticated'`) ورجع 401 على Request
+ * كان معاه توكن — يبقى الجلسة بقت غير صالحة من الباك (JWT انتهى، أو الحساب
+ * اتعطّل / التوكن اتلغى من مكان تاني) وإحنا لسه مصدّقين إننا Authenticated
+ * محليًا. هنا بس (مش أي 401) بنمسح الجلسة ونحوّل للـ login فورًا (§3.2)
+ * — 401 من محاولة Login/Setup الأصلية نفسها متتلمسش لأنها مبتبعتش توكن.
+ */
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error?.response?.status;
+    const hadToken = Boolean(error?.config?.headers?.Authorization);
+
+    if (status === 401 && hadToken && useAuthStore.getState().status === 'authenticated') {
+      useAuthStore.getState().clearSession();
+      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+        window.location.assign('/login');
+      }
+    }
+
+    return Promise.reject(error);
+  },
 );

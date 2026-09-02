@@ -4,7 +4,6 @@ import { FirstRunSetupPage } from './features/setup/FirstRunSetupPage';
 import { LoginPage } from './features/auth/LoginPage';
 import { ForgotPasswordPage } from './features/auth/ForgotPasswordPage';
 import { DashboardPlaceholderPage } from './pages/DashboardPlaceholderPage';
-import { ComingSoonPage } from './pages/ComingSoonPage';
 import { SessionBoundary } from './app/SessionBoundary';
 import { ProtectedRoute } from './app/ProtectedRoute';
 import { RootRedirect } from './app/RootRedirect';
@@ -15,6 +14,8 @@ import { PatientsListPage } from './features/patients/PatientsListPage';
 import { PatientProfilePage } from './features/patients/PatientProfilePage';
 import { AttendancePage } from './features/attendance/AttendancePage';
 import { PaymentsPage } from './features/payments/PaymentsPage';
+import { InventoryPage } from './features/inventory/InventoryPage';
+import { AdminPage } from './features/admin/AdminPage';
 
 function App() {
   return (
@@ -40,8 +41,8 @@ function App() {
               <Route path="/patients/:id" element={<PatientProfilePage />} />
               <Route path="/attendance" element={<AttendancePage />} />
               <Route path="/payments" element={<PaymentsPage />} />
-              <Route path="/inventory" element={<ComingSoonPage titleKey="shell.nav.inventory" />} />
-              <Route path="/admin" element={<ComingSoonPage titleKey="shell.nav.admin" />} />
+              <Route path="/inventory" element={<InventoryPage />} />
+              <Route path="/admin" element={<AdminPage />} />
             </Route>
           </Route>
         </Routes>

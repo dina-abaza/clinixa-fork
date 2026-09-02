@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../../lib/store/authStore';
 import { useTheme } from '../../lib/theme/useTheme';
 import { getAvatarColorClass, getAvatarInitials } from '../../lib/avatar';
-import { getSystemAlerts } from '../../lib/api/systemAlerts';
+import { getSystemAlerts, markSystemAlertRead } from '../../lib/api/systemAlerts';
 import { postLogout } from '../../lib/api/auth';
 import { useDropdownMenu } from './useDropdownMenu';
 import { GlobalSearch } from './GlobalSearch';
@@ -14,6 +14,7 @@ import { GlobalSearch } from './GlobalSearch';
 export function Topbar() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { theme, toggleTheme } = useTheme();
   const employee = useAuthStore((s) => s.employee);
   const activeBranch = useAuthStore((s) => s.activeBranch);
@@ -30,6 +31,11 @@ export function Topbar() {
   });
   const alerts = alertsQuery.data?.ok ? alertsQuery.data.data.items : [];
   const unreadCount = alertsQuery.data?.ok ? alertsQuery.data.data.unread_count : 0;
+
+  const markReadMutation = useMutation({
+    mutationFn: (id: string) => markSystemAlertRead(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['system-alerts'] }),
+  });
 
   const [loggingOut, setLoggingOut] = useState(false);
 
@@ -96,7 +102,14 @@ export function Topbar() {
             <div className="ci-none">{t('shell.topbar.noAlerts')}</div>
           ) : (
             alerts.slice(0, 5).map((alert) => (
-              <div className="menu-item" key={alert.id} role="menuitem">
+              <button
+                type="button"
+                className="menu-item"
+                key={alert.id}
+                role="menuitem"
+                style={{ opacity: alert.is_read ? 0.6 : 1 }}
+                onClick={() => !alert.is_read && markReadMutation.mutate(alert.id)}
+              >
                 <svg
                   width={18}
                   height={18}
@@ -109,7 +122,7 @@ export function Topbar() {
                   <span>{alert.title}</span>
                   {alert.detail && <span className="meta">{alert.detail}</span>}
                 </span>
-              </div>
+              </button>
             ))
           )}
         </div>
